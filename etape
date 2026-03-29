@@ -1,0 +1,257 @@
+symfony7; 8 en cours actuelement
+
+Pour utiliser Symfony 7 sur Linux Mint, le plus propre aujourd’hui est de viser Symfony 7.4 plutôt que 7.0, car Symfony 7.0 n’est plus maintenu, alors que la branche 7.x demande PHP 8.2 ou plus
+
+outils:
+php;extensions php; composer; symfony cli; git;
+
+git --version
+php -v
+php -m : les extensions PHP importantes
+          php -m | grep -Ei 'ctype|iconv|pcre|session|simplexml|tokenizer|mbstring|xml|intl|curl|zip'
+composer --version: qui gère les paquets PHP d’un projet Symfony.
+symfony -V: Ça vérifie si Symfony CLI est installé.
+
+*Installer les outils de base
+sudo apt install -y git curl unzip
+
+*Installer PHP et les extensions utiles
+sudo apt install -y php php-cli php-common php-mbstring php-xml php-intl php-curl php-zip
+----------------->
+explication:
+php : le moteur PHP
+php-cli : permet d’utiliser PHP dans le terminal
+php-common : fichiers communs PHP
+php-mbstring : gestion correcte des chaînes de caractères
+php-xml : gestion XML / SimpleXML
+php-intl : internationalisation, formats, dates, langues
+php-curl : requêtes HTTP
+php-zip : gestion des archives zip
+
+*installer l’extension PostgreSQL
+sudo apt install -y php-pgsql :Ça permet à PHP/Symfony de se connecter à PostgreSQL.
+
+*installer l’extension pdo_sqlite ou sqlit
+sudo apt update
+sudo apt install php8.3-sqlite3
+
+*Installer Composer
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php composer-setup.php
+sudo mv composer.phar /usr/local/bin/composer
+php -r "unlink('composer-setup.php');"
+
+puis vérifie: composer --version
+----------------->
+éxplication:
+php -r "copy(...)" : télécharge l’installateur Composer
+php composer-setup.php : génère le fichier composer.phar
+sudo mv composer.phar /usr/local/bin/composer : place Composer dans un dossier global pour pouvoir taper composer partout
+php -r "unlink(...)" : supprime le fichier d’installation temporaire
+
+*Installer Symfony CLI
+curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.deb.sh' | sudo -E bash
+sudo apt install symfony-cli
+Puis vérifie : symfony -V
+----------------->
+éxplication:
+la première ajoute le dépôt officiel Symfony CLI à ton système
+la deuxième installe symfony-cli
+
+--------------------------
+VERIFICATION FINALE:
+git --version
+php -v
+php -m | grep -Ei 'ctype|iconv|pcre|session|simplexml|tokenizer|mbstring|xml|intl|curl|zip'
+composer --version
+symfony -V
+php -m | grep -Ei 'pdo|pgsql' /ou/ php -m | grep -Ei 'sqlite|pdo' ceci pour sqlite
+composer diagnose
+
+note:
+“Symfony utilise surtout OpenAPI/Swagger via NelmioApiDocBundle.” alors que django utilise swagger
+Tu peux afficher ta vraie arborescence actuelle sur ta machine avec :
+tree -L 2
+***************************************
+***************************************
+créer le projet Symfony simple:
+symfony new crud_simple
+cd crud_simple
+
+vérifie que le projet fonctionne :
+symfony server:start =>http://127.0.0.1:8000 => welcome
+
+Les dossiers les plus importants sont :
+src/ : ton code backend Symfony.
+config/ : la configuration de l’application, avec notamment packages/, routes/, bundles.php, routes.yaml et services.yaml.
+public/ : la racine web, avec index.php comme point d’entrée HTTP.
+bin/console : la commande principale pour travailler avec Symfony.
+var/ : cache et logs générés.
+vendor/ : dépendances installées par Composer.
+
+-->2
+composer require symfony/orm-pack
+composer require --dev symfony/maker-bundle
+composer require symfony/form symfony/validator symfony/twig-bundle
+
+----
+À quoi sert chaque commande :
+-composer require symfony/orm-pack
+installe Doctrine ORM pour connecter Symfony à la base de données et gérer les entités.
+-composer require --dev symfony/maker-bundle
+installe MakerBundle, qui permet ensuite d’utiliser des commandes comme make:entity et make:crud.
+-composer require symfony/form symfony/validator symfony/twig-bundle
+ajoute ce qu’il faut pour les formulaires, la validation, et l’affichage HTML avec Twig dans un CRUD classique.
+
+-->3
+-Ouvre le fichier .env
+cherche la ligne DATABASE_URL= et remplace-la par :
+DATABASE_URL="sqlite:///%kernel.project_dir%/var/app.db"
+-
+#avant:
+#APP_ENV=dev
+#APP_SECRET=
+#APP_SHARE_DIR=var/share
+#DEFAULT_URI=http://localhost
+#DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+
+APP_ENV=dev
+APP_SECRET=dev_secret_symfony_crud_simple_2026
+APP_SHARE_DIR=var/share
+DEFAULT_URI=http://localhost
+DATABASE_URL="sqlite:///%kernel.project_dir%/var/app.db"
+#ici on utilise sqlite car plus simple
+-
+Crée la base:
+touch var/app.db
+ls var
+
+touch var/app.db : crée le fichier SQLite vide
+ls var : vérifie que app.db est bien là
+
+-->4
+créer ton entité pour le CRUD:
+php bin/console make:entity Produit
+
+Quand la commande te pose les questions, réponds comme ceci :
+Class name of the entity to create or update:
+> Produit
+
+New property name (press <return> to stop adding fields):
+> nom
+
+Field type:
+> string
+
+Field length:
+> 255
+
+Can this field be null in the database (nullable):
+> no
+
+New property name:
+> prix
+
+Field type:
+> float
+
+Can this field be null in the database (nullable):
+> no
+
+New property name:
+> description
+
+Field type:
+> text
+
+Can this field be null in the database (nullable):
+> yes
+
+New property name:
+> 
+Après ça, Symfony va créer un fichier dans :src/Entity/Produit.php
+
+-->5
+créer la migration:
+php bin/console make:migration
+
+-->6
+-exécuter la migration pour créer la table
+php bin/console doctrine:migrations:migrate
+yes
+
+-->7
+Le générateur CRUD a besoin du package CSRF pour protéger les formulaires:
+composer require symfony/security-csrf
+
+générer le CRUD automatiquement:
+php bin/console make:crud Produit
+
+Q:ProduitController; no
+
+-->8
+lancer le projet et ouvrir le CRUD dans le navigateur
+symfony server:start : http://127.0.0.1:8000/produit/
+
+la on peut tous voir maintenant un crud mais crée, lister; modifier
+**********************
+**********************
+Workflow CRUD Symfony (à retenir par cœur)
+symfony new mon_projet
+cd mon_projet
+
+composer require symfony/orm-pack
+composer require --dev symfony/maker-bundle
+composer require symfony/form symfony/validator symfony/twig-bundle
+composer require symfony/security-csrf
+
+# config .env (DATABASE_URL)
+
+Créer un contrôleur: Ça crée rapidement un contrôleur, et souvent aussi un template Twig associé.
+  php bin/console make:controller NomController
+
+Créer une entité:Ça génère la classe Doctrine de base et t’aide à ajouter les champs.
+  php bin/console make:entity NomEntite
+Créer une migration: Ça génère le fichier de migration à partir des changements de tes entités. Ensuite Doctrine est le flux standard pour la base de données dans Symfony. 
+  php bin/console make:migration
+  php bin/console doctrine:migrations:migrate
+Générer un CRUD complet: Ça te crée rapidement : le contrôleur CRUD: le formulaire; les vues Twig principales; C’est exactement la commande qui évite le plus de répétition pour un projet simple.
+  php bin/console make:crud NomEntite
+Créer un formulaire: Pratique quand tu veux un formulaire personnalisé, sans tout écrire à la main.
+  php bin/console make:form NomFormType
+Créer une commande console: Utile pour des tâches internes comme importer des données, créer un admin, vider un cache métier, etc.
+  php bin/console make:command
+Créer un validateur personnalisé: Utile quand une règle métier n’existe pas déjà.
+ php bin/console make:validator
+
+symfony server:start
+
+**********************
+**********************
+Pour un autre CRUD, par exemple Produit2, tu fais :
+
+php bin/console make:entity Produit2 :=> completer les inputs ici
+php bin/console make:migration
+php bin/console doctrine:migrations:migrate :=>Attention ! La migration peut modifier la base de données ou supprimer des données. donc yes ici
+php bin/console make:crud Produit2
+
+symfony server:start
+--
+Étape  — Supprimer les fichiers Produit2
+Supprime ces fichiers (s’ils existent) :
+rm src/Entity/Produit2.php
+rm src/Repository/Produit2Repository.php
+rm src/Controller/Produit2Controller.php
+rm src/Form/Produit2Type.php
+rm -r templates/produit2
+
+Supprimer la table dans la base de données
+php bin/console make:migration
+php bin/console doctrine:migrations:migrate
+
+— Nettoyer le cache
+php bin/console cache:clear
+----------------------------------------
+
+
+
