@@ -1,3 +1,19 @@
+--------------------------
+VERIFICATION avant tous:
+git --version
+php -v
+php -m | grep -Ei 'ctype|iconv|pcre|session|simplexml|tokenizer|mbstring|xml|intl|curl|zip'
+composer --version
+symfony -V
+php -m | grep -Ei 'pdo|pgsql' /ou/ php -m | grep -Ei 'sqlite|pdo' ceci pour sqlite
+composer diagnose
+
+note:
+“Symfony utilise surtout OpenAPI/Swagger via NelmioApiDocBundle.” alors que django utilise swagger
+Tu peux afficher ta vraie arborescence actuelle sur ta machine avec :
+tree -L 2
+note ici avec linux
+***************************************
 1) Créer le projet
 symfony new crud3
 cd crud3
